@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 Data Sync</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        button { background: #007bff; color: white; border: none; padding: 15px 30px; border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%; margin-top: 10px; }
+        button:disabled { background: #ccc; }
+        #status { margin-top: 20px; font-weight: bold; color: #555; }
+        .ios-warning { display: none; background: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>ESP32 Air Quality</h2>
+        
+        <div id="iosHelp" class="ios-warning">
+            <strong>iPhone User?</strong> Please open this page in the <b>Bluefy</b> browser app to use Bluetooth features.
+        </div>
+
+        <div id="dataDisplay">Connect to see sensor data</div>
+        
+        <button id="connectBtn">1. Connect ESP32</button>
+        <button id="syncBtn" disabled>2. Capture & Send Data</button>
+        
+        <div id="status">Status: Disconnected</div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
