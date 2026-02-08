@@ -10,6 +10,9 @@
         button:disabled { background: #ccc; }
         #status { margin-top: 20px; font-weight: bold; color: #555; }
         .ios-warning { display: none; background: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 14px; }
+        .map-link { display: block; margin-top: 20px; padding: 12px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; font-size: 14px; font-weight: bold; transition: background 0.3s; }
+        .map-link:hover { background: #5a6268; }
+        #dataDisplay { margin: 15px 0; padding: 10px; background: #e9ecef; border-radius: 5px; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -24,6 +27,8 @@
         
         <button id="connectBtn">1. Connect ESP32</button>
         <button id="syncBtn" disabled>2. Capture & Send Data</button>
+
+        <a href="map.html" class="map-link">View Data Map</a>
         
         <div id="status">Status: Disconnected</div>
     </div>
