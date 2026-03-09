@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse Technique - AQI Project</title>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+    <style>
+        :root {
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --accent: #375aff;
+            --text-main: #2d3436;
+            --text-dim: #636e72;
+            --border: #e1e4e8;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            max-width: 1100px;
+            margin: 40px auto;
+            text-align: left;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        h1 { font-size: 28px; margin-top: 10px; color: #1a1a1a; }
+
+        .explanation-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .code-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .code-side {
+            background: #1d1f21 !important;
+            display: flex;
+            align-items: center;
+        }
+
+        pre[class*="language-"] {
+            margin: 0 !important;
+            padding: 25px !important;
+            background: transparent !important;
+            width: 100%;
+        }
+
+        code[class*="language-"] {
+            font-family: 'Fira Code', 'Consolas', monospace !important;
+            font-size: 13px !important;
+        }
+
+        .explanation-side {
+            padding: 40px;
+            background: #ffffff;
+        }
+
+        .explanation-side h3 {
+            margin-top: 0;
+            color: var(--accent);
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .line-by-line {
+            list-style: none;
+            padding: 0;
+        }
+
+        .line-by-line li {
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            padding-left: 15px;
+            border-left: 2px solid var(--border);
+            font-size: 14px;
+        }
+
+        .line-by-line b {
+            color: var(--text-main);
+            background: #f1f2f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        @media (max-width: 850px) {
+            .code-box { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-link">← Retour à la Carte</a>
+        <h1>Analyse du Code Source</h1>
+    </header>
+
+    <main id="main-container" class="explanation-container"></main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+
+    <script src="codeExplanation.js"></script>
+
+    <script>
+        async function generateAnalysis() {
+            const container = document.getElementById('main-container');
+            
+            codeBlocks.forEach(block => {
+                const box = document.createElement('div');
+                box.className = 'code-box';
+
+                const escapedCode = block.code
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;");
+
+                const explanationList = block.explanations
+                    .map(text => `<li>${text}</li>`)
+                    .join('');
+
+                box.innerHTML = `
+                    <div class="code-side">
+                        <pre class="language-cpp"><code class="language-cpp">${escapedCode}</code></pre>
+                    </div>
+                    <div class="explanation-side">
+                        <h3>${block.title}</h3>
+                        <ul class="line-by-line">
+                            ${explanationList}
+                        </ul>
+                    </div>
+                `;
+                container.appendChild(box);
+            });
+
+            if (typeof Prism !== 'undefined' && Prism.highlightAll) {
+                Prism.highlightAll();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', generateAnalysis);
+    </script>
+</body>
+</html>
