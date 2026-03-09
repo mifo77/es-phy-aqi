@@ -10,7 +10,7 @@ if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !window.bluefy) {
 
 document.getElementById('connectBtn').onclick = async () => {
     try {
-        document.getElementById('status').innerText = "Statut : Recherche en cours...";
+        document.getElementById('dataDisplay').innerText = "Statut : Recherche en cours...";
         bleDevice = await navigator.bluetooth.requestDevice({
             filters: [{ name: 'ESP32_Sensor' }],
             optionalServices: [SERVICE_UUID]
@@ -20,17 +20,17 @@ document.getElementById('connectBtn').onclick = async () => {
         const service = await server.getPrimaryService(SERVICE_UUID);
         bleChar = await service.getCharacteristic(CHAR_UUID);
 
-        document.getElementById('status').innerText = "Statut : Connecté !";
+        document.getElementById('dataDisplay').innerText = "Statut : Connecté !";
         document.getElementById('syncBtn').disabled = false;
         document.getElementById('connectBtn').style.display = 'none';
     } catch (error) {
         console.error(error);
-        document.getElementById('status').innerText = "Statut : Échec de la connexion.";
+        document.getElementById('dataDisplay').innerText = "Statut : Échec de la connexion.";
     }
 };
 
 document.getElementById('syncBtn').onclick = () => {
-    document.getElementById('status').innerText = "Statut : Capture en cours...";
+    document.getElementById('dataDisplay').innerText = "Statut : Capture en cours...";
     
     navigator.geolocation.getCurrentPosition(async (position) => {
         try {
@@ -44,9 +44,9 @@ document.getElementById('syncBtn').onclick = () => {
                 lng: position.coords.longitude,
                 time: new Date().toISOString()
             };
-
+            
             // Send to Google Sheets
-            document.getElementById('status').innerText = "Statut : Envoi à la base de données...";
+            document.getElementById('dataDisplay').innerText = "Statut : Envoi à la base de données...";
             const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -54,13 +54,13 @@ document.getElementById('syncBtn').onclick = () => {
                 body: JSON.stringify(payload)
             });
 
-            document.getElementById('status').innerText = "Statut : Succès ! Données envoyées.";
+            document.getElementById('dataDisplay').innerText = "Statut : Succès ! Données envoyées.";
         } catch (err) {
-            document.getElementById('status').innerText = "Statut : Erreur lors de la synchronisation";
+            document.getElementById('dataDisplay').innerText = "Statut : Erreur lors de la synchronisation";
             console.error(err);
         }
     }, (error) => {
-        document.getElementById('status').innerText = "Statut : Accès GPS refusé";
+        document.getElementById('dataDisplay').innerText = "Statut : Accès GPS refusé";
     });
 };
 
