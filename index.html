@@ -1,38 +1,195 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ESP32 Data Sync</title>
+    <title>Carte AQI - Casablanca</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f9; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
-        button { background: #007bff; color: white; border: none; padding: 15px 30px; border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%; margin-top: 10px; }
-        button:disabled { background: #ccc; }
-        #status { margin-top: 20px; font-weight: bold; color: #555; }
-        .ios-warning { display: none; background: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 14px; }
-        .map-link { display: block; margin-top: 20px; padding: 12px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; font-size: 14px; font-weight: bold; transition: background 0.3s; }
-        .map-link:hover { background: #5a6268; }
-        #dataDisplay { margin: 15px 0; padding: 10px; background: #e9ecef; border-radius: 5px; font-family: monospace; }
+        #map { height: 100vh; width: 100%; z-index: 1; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; }
+
+        .nav-container {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+        .nav-btn {
+            background: white;
+            padding: 10px 18px;
+            text-decoration: none;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+        .nav-btn:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+        }
+        .nav-btn.primary {
+            background: #007bff;
+            color: white;
+            border: none;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 30px;
+            left: 15px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: 1px solid #ddd;
+            width: 130px;
+        }
+        .legend h4 { margin: 0 0 10px 0; font-size: 13px; text-align: center; }
+        .scale-bar {
+            height: 150px;
+            width: 15px;
+            background: linear-gradient(to top, #00e400 0%, #ffff00 25%, #ff7e00 50%, #ff0000 75%, #8f3f97 100%);
+            border-radius: 10px;
+            float: left;
+            margin-right: 10px;
+        }
+        .scale-labels {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 150px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .leaflet-popup-close-button {
+            color: white !important;
+            padding: 8px 8px 0 0 !important;
+            z-index: 1001;
+        }
+        .leaflet-popup-content-wrapper {
+            padding: 0 !important;
+            background: none !important;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+        }
+        .leaflet-popup-content {
+            margin: 0 !important;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>ESP32 Air Quality</h2>
-        
-        <div id="iosHelp" class="ios-warning">
-            <strong>iPhone User?</strong> Please open this page in the <b>Bluefy</b> browser app to use Bluetooth features.
-        </div>
-
-        <div id="dataDisplay">Connect to see sensor data</div>
-        
-        <button id="connectBtn">1. Connect ESP32</button>
-        <button id="syncBtn" disabled>2. Capture & Send Data</button>
-
-        <a href="map.html" class="map-link">View Data Map</a>
-        
-        <div id="status">Status: Disconnected</div>
+    <div class="nav-container">
+        <a href="sync.html" class="nav-btn primary">Ajouter</a>
+        <a href="code.html" class="nav-btn">Fonctionnement</a>
     </div>
 
-    <script src="script.js"></script>
+    <div class="legend">
+        <h4>PM2.5 (µg/m³)</h4>
+        <div class="scale-bar"></div>
+        <div class="scale-labels">
+            <span>70+</span>
+            <span>50</span>
+            <span>30</span>
+            <span>15</span>
+            <span>0</span>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzBxsqGPW8uakxLnHVaaFwgciRaHxr6vT2Ml9s8tuLPUqryhpD-JXsqlptbyPsivG0S/exec";
+
+        const map = L.map('map').setView([33.5731, -7.5898], 11.5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // --- Gradient Color Logic ---
+        function getAQIColor(val) {
+            if (isNaN(val) || val === null || val === undefined) {
+                return "#000000";
+            }
+            // 0: Green, 15: Orange/Yellow, 35: Red, 55+: Purple
+            if (val <= 0) return "#00e400";
+            if (val <= 15) return interpolateColor("#00e400", "#ffff00", val / 15);
+            if (val <= 30) return interpolateColor("#ffff00", "#ff7e00", (val - 15) / (30 - 15));
+            if (val <= 50) return interpolateColor("#ff7e00", "#ff0000", (val - 30) / (50 - 30));
+            if (val <= 70) return interpolateColor("#ff0000", "#8f3f97", (val - 50) / (70 - 50));
+            return "#8f3f97";
+        }
+
+        function interpolateColor(color1, color2, factor) {
+            let c1 = color1.match(/\w\w/g).map(x => parseInt(x, 16));
+            let c2 = color2.match(/\w\w/g).map(x => parseInt(x, 16));
+            let result = c1.map((val, i) => Math.round(val + factor * (c2[i] - val)));
+            return "#" + result.map(x => x.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function loadData() {
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL);
+                const data = await response.json();
+                const bounds = [];
+
+                data.forEach(point => {
+                    const pmValue = parseFloat(point.pm2_5);
+                    const isError = isNaN(pmValue);
+                    const dynamicColor = getAQIColor(pmValue);
+
+                    const marker = L.circleMarker([point.lat, point.lng], {
+                        color: dynamicColor,
+                        fillColor: dynamicColor,
+                        fillOpacity: 0.9,
+                        weight: 2,
+                        radius: 12
+                    }).addTo(map);
+
+                    const headerTitle = isError ? "ERREUR CAPTEUR" : "Qualité de l'Air";
+                    const displayValue = isError ? "⚠️" : point.pm2_5;
+                    const errorSubText = isError ? 
+                        `<div style="color:red; font-weight:bold; margin-top:5px;">Échec de la capture</div>` : 
+                        `<b>PM10:</b> ${point.pm10} µg/m³`;
+
+                    const popupContent = `
+                        <div style="font-family: 'Segoe UI', sans-serif; width: 160px; border-radius: 10px; overflow: hidden;">
+                            <div style="background: ${isError ? '#cc0000' : dynamicColor}; color: black; padding: 10px; text-align: center;">
+                                <span style="font-size: 0.7em; text-transform: uppercase; font-weight: bold; opacity: 0.9;">${headerTitle}</span><br>
+                                <span style="font-size: 1.8em; font-weight: 800;">${displayValue}</span>
+                                ${isError ? '' : '<span style="font-size: 0.9em;">µg/m³</span>'}
+                            </div>
+                            <div style="padding: 10px; background: white; border: 1px solid #eee; border-top: none; border-radius: 0 0 8px 8px;">
+                                <div style="margin-bottom: 5px; color: #666; font-size: 11px;">
+                                    <b>📅 Date:</b><br>${new Date(point.time).toLocaleString('fr-FR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit'})}
+                                </div>
+                                <div style="color: #444; font-size: 12px; border-top: 1px solid #f0f0f0; margin-top: 5px; padding-top: 5px;">
+                                    ${errorSubText}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupContent, {
+                        maxWidth: 200,
+                        className: 'custom-popup'
+                    });
+
+                    bounds.push([point.lat, point.lng]);
+                });
+
+                if (bounds.length > 0) map.fitBounds(bounds);
+            } catch (e) { console.error("Data load failed", e); }
+        }
+
+        loadData();
+    </script>
 </body>
 </html>
